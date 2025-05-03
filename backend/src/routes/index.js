@@ -2,14 +2,14 @@ const express = require('express');
 const router = express.Router();
 
 const authMiddleware = require('../middlewares/authMiddleware');
-const userRoutes = require('./userRouter');
+// const userRoutes = require('./userRouter');
 
 const formData = require('express-form-data');
 const formMiddleware = formData.parse();
 router.use(formMiddleware);
 
 // setting up routes
-router.use('/users', userRoutes);
+// router.use('/users', userRoutes);
 
 // middle wares 
 router.post('/login', authMiddleware.login);

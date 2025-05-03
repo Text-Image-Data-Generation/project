@@ -6,7 +6,6 @@ import Home from './components/Home';
 import Login from './components/Login';
 import SignUp from './components/signup';
 import Navbar from './components/Navbar';
-import ProjectView from './components/ProjectView';
 import { ToastProvider } from './components/ToastContext';
 
 const ProtectedRoute = ({ children }) => {
@@ -60,11 +59,7 @@ const App = () => {
                         </ProtectedRoute>
                     } />
 
-                    <Route path="/project/:id" element={
-                        <ProtectedRoute>
-                            <ProjectView />
-                        </ProtectedRoute>
-                    } />
+                    
 
                     {/* Redirect unknown routes */}
                     <Route path="*" element={<Navigate to="/" replace />} />

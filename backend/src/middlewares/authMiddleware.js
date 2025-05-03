@@ -11,9 +11,8 @@ const login = async (req, res) => {
         // Search user by either doctorName or email
         const user = await UserModel.findOne({
             $or: [
-                // { name: identifier },
-                { email: identifier },
-                // { phoneNumber: identifier },
+                { name: identifier },
+              
             ]
         });
 
@@ -31,7 +30,7 @@ const login = async (req, res) => {
 
         // Generate JWT token including both doctorName and email
         const token = jwt.sign(
-            { username: user.name, email: user.email,  userid: user._id },
+            { username: user.name,  userid: user._id },
             process.env.REACT_APP_SECRET_KEY,
             { expiresIn: '3d' }
         );
@@ -57,11 +56,11 @@ const login = async (req, res) => {
 // Signup Controller
 const signup = async (req, res) => {
     console.log(req.body);
-    const { name, email, password, country } = req.body;
+    const { name, password } = req.body;
 
     try {
         // Check if user already exists
-        const existingUser = await UserModel.findOne({ $or: [{ name }, { email }] });
+        const existingUser = await UserModel.findOne({ name });
         if (existingUser) {
             return res.status(400).json({
                 error: 'UserExists',
@@ -72,9 +71,7 @@ const signup = async (req, res) => {
         // Create user with hashed password
         const newUser = new UserModel({
             name,
-            email,
-            passwordHash: password, // Hashing handled in pre-save hook
-            country
+            passwordHash: password // Hashing handled in pre-save hook
         });
 
         await newUser.save();
@@ -102,7 +99,7 @@ const getProfile = (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.REACT_APP_SECRET_KEY);
         // Prefer doctorName from the token, otherwise fallback to email
-        res.json({ username: decoded.username || decoded.email, role: decoded.role, userid: decoded.userid });
+        res.json({ username: decoded.username , userid: decoded.userid });
     } catch (err) {
         res.status(401).json({ message: 'Invalid token' });
     }

@@ -41,8 +41,9 @@ const LoginPage = () => {
         <div className="d-flex justify-content-center align-items-center vh-100" style={{ background: 'linear-gradient(135deg, #f0f0f0, #d9d9d9)' }}>
             <div className="card shadow p-4" style={{ maxWidth: '500px', width: '100%', borderRadius: '20px' }}>
                 <div className="text-center mb-4">
-                    <h2 className="text-dark fw-bold">Task Tracker</h2>
-                    <p className="text-muted">Manage projects effectively</p>
+                    <h2 className="text-primary fw-bold">Data Generation and Augmentation</h2>
+                    <p className="text-muted">Manage datasets effectively</p>
+
                 </div>
 
                 <h4 className="text-center mb-4">Login</h4>

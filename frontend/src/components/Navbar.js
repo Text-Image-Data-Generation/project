@@ -41,19 +41,13 @@ const Navbar = () => {
         >
             <div className="container-fluid d-flex justify-content-between align-items-center">
                 <a className="navbar-brand d-flex align-items-center" href="/">
-                    <img
-                        src="/logo1.jpeg"
-                        alt="Logo"
-                        height="60"
-                        className="navbar-logo me-3"
-                        style={{ borderRadius: '8px' }}
-                    />
+                    
                     <span style={{
                         fontSize: '1.8rem',
                         fontWeight: '700',
                         color: '#333',
                     }}>
-                        Project Tracker
+                        Data Augmentation and Generation
                     </span>
                 </a>
 
