@@ -8,6 +8,7 @@ import SignUp from './components/signup';
 import Navbar from './components/Navbar';
 import { ToastProvider } from './components/ToastContext';
 import Augmentation from './components/Augmentation';
+import CTGANUploader from './components/CTGANUploader';
 
 const ProtectedRoute = ({ children }) => {
     const { authenticated } = useAuth();
@@ -63,6 +64,12 @@ const App = () => {
                     <Route path="/shashi" element={
                         <ProtectedRoute>
                             <Augmentation/>
+                        </ProtectedRoute>
+                    } />
+                    {/* Protected route for home */}
+                    <Route path="/surya" element={
+                        <ProtectedRoute>
+                            <CTGANUploader/>
                         </ProtectedRoute>
                     } />
 
