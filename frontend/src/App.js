@@ -68,6 +68,12 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     {/* Protected route for home */}
+                    <Route path="/Uploads" element={
+                        <ProtectedRoute>
+                            <Uploads/>
+                        </ProtectedRoute>
+                    } />
+                    {/* Protected route for home */}
                     <Route path="/surya" element={
                         <ProtectedRoute>
                             <CTGANUploader/>
