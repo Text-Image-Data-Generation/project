@@ -8,6 +8,7 @@ import SignUp from './components/signup';
 import Navbar from './components/Navbar';
 import { ToastProvider } from './components/ToastContext';
 import Augmentation from './components/Augmentation';
+import CTGANUploader from './components/CTGANUploader';
 import Uploads from './components/Uploads';
 
 const ProtectedRoute = ({ children }) => {
@@ -67,9 +68,9 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     {/* Protected route for home */}
-                    <Route path="/Uploads" element={
+                    <Route path="/surya" element={
                         <ProtectedRoute>
-                            <Uploads/>
+                            <CTGANUploader/>
                         </ProtectedRoute>
                     } />
 
