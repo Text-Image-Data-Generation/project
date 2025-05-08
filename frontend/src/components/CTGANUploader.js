@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 function CTGANUploader() {
     const [file, setFile] = useState(null);
@@ -6,43 +7,40 @@ function CTGANUploader() {
     const flaskUrl = process.env.REACT_APP_FlaskUrl;
 
     const handleUpload = async () => {
-        console.log(flaskUrl);
         if (!file || !flaskUrl) {
-            alert("Please provide a CSV file and make sure Flask URL is set in .env");
+            alert("Please provide a CSV file and ensure Flask URL is set.");
             return;
         }
 
-        
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("epochs", 5); // Or make it dynamic
-        formData.append("samples", 100);
-        
-        console.log(formData);
+        formData.append("epochs", "5");
+        formData.append("samples", "100");
+
         setLoading(true);
 
         try {
-            const response = await fetch(`${flaskUrl}/generate-synthetic`, {
-                method: "POST",
-                body: formData,
-            });
+            const response = await axios.post(
+                `${flaskUrl}/generate-synthetic`,
+                formData // No need to set headers
+            );
 
-            const result = await response.json();
+            const { output_file } = response.data;
 
-            if (result.error) {
-                throw new Error(result.error);
-            }
-
-            const downloadResponse = await fetch(`${flaskUrl}/${result.output_file}`);
-            const blob = await downloadResponse.blob();
+            const downloadResponse = await axios.get(
+                `${flaskUrl}/download-csv/${encodeURIComponent(output_file)}`,
+                { responseType: "blob" }
+            );
+            
+            const blob = new Blob([downloadResponse.data], { type: "text/csv" });
             const downloadUrl = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = downloadUrl;
-            link.download = "synthetic_data.csv";
+            link.download = output_file+"synthetic_data.csv";
             link.click();
         } catch (error) {
+            console.error("Upload or download failed:", error);
             alert("Failed to generate or download synthetic data.");
-            console.error(error);
         } finally {
             setLoading(false);
         }
@@ -51,7 +49,6 @@ function CTGANUploader() {
     return (
         <div style={{ padding: "2rem", maxWidth: "500px", margin: "auto" }}>
             <h2>Upload CSV to Generate Synthetic Data</h2>
-
             <input
                 type="file"
                 accept=".csv"
@@ -59,7 +56,6 @@ function CTGANUploader() {
                 style={{ marginBottom: "1rem" }}
             />
             <br />
-
             <button onClick={handleUpload} disabled={loading}>
                 {loading ? "Processing..." : "Generate Synthetic Data"}
             </button>
