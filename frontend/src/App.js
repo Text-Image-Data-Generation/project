@@ -7,6 +7,7 @@ import Login from './components/Login';
 import SignUp from './components/signup';
 import Navbar from './components/Navbar';
 import { ToastProvider } from './components/ToastContext';
+import Augmentation from './components/Augmentation';
 
 const ProtectedRoute = ({ children }) => {
     const { authenticated } = useAuth();
@@ -56,6 +57,12 @@ const App = () => {
                     <Route path="/project" element={
                         <ProtectedRoute>
                             <Home />
+                        </ProtectedRoute>
+                    } />
+                    {/* Protected route for home */}
+                    <Route path="/shashi" element={
+                        <ProtectedRoute>
+                            <Augmentation/>
                         </ProtectedRoute>
                     } />
 

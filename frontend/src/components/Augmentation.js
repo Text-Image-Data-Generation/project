@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 // Base URL for your Flask API
-const API_BASE_URL = 'http://localhost:5000'; // Adjust if your Flask app runs on a different port
+const API_BASE_URL = process.env.REACT_APP_FlaskUrl ||'http://localhost:5000'; // Adjust if your Flask Augmentation runs on a different port
 
 // Define the available augmentation options and their parameters
 // This should mirror the capabilities of your backend
@@ -44,7 +44,7 @@ const AUGMENTATION_OPTIONS = [
 ];
 
 // Main Application Component
-function App() {
+function Augmentation() {
     // State variables
     const [currentStep, setCurrentStep] = useState('upload'); // upload, selectAugmentations, setAugmentationCount, viewResults
     const [uploadedImages, setUploadedImages] = useState([]); // Array of File objects
@@ -503,17 +503,5 @@ function App() {
     );
 }
 
-export default App;
+export default Augmentation;
 
-// To use this App component, you would typically render it in your main index.js or App.js
-// import React from 'react';
-// import ReactDOM from 'react-dom/client';
-// import App from './Augmentation'; // Assuming this file is Augmentation.js
-// import './index.css'; // Ensure TailwindCSS is set up here
-
-// const root = ReactDOM.createRoot(document.getElementById('root'));
-// root.render(
-//   <React.StrictMode>
-//     <App />
-//   </React.StrictMode>
-// );
