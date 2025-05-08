@@ -22,7 +22,7 @@ const Augmentation = () => {
       augmentations,
     });
     alert("Augmentation complete!");
-    navigate('/');
+    navigate('/Uploads');
   };
 
   return (
