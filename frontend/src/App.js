@@ -8,6 +8,7 @@ import SignUp from './components/signup';
 import Navbar from './components/Navbar';
 import { ToastProvider } from './components/ToastContext';
 import Augmentation from './components/Augmentation';
+import Uploads from './components/Uploads';
 
 const ProtectedRoute = ({ children }) => {
     const { authenticated } = useAuth();
@@ -60,9 +61,15 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     {/* Protected route for home */}
-                    <Route path="/shashi" element={
+                    <Route path="/Augmentation" element={
                         <ProtectedRoute>
                             <Augmentation/>
+                        </ProtectedRoute>
+                    } />
+                    {/* Protected route for home */}
+                    <Route path="/Uploads" element={
+                        <ProtectedRoute>
+                            <Uploads/>
                         </ProtectedRoute>
                     } />
 
