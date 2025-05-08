@@ -8,11 +8,8 @@ import SignUp from './components/signup';
 import Navbar from './components/Navbar';
 import { ToastProvider } from './components/ToastContext';
 import Augmentation from './components/Augmentation';
-<<<<<<< HEAD
 import CTGANUploader from './components/CTGANUploader';
-=======
 import Uploads from './components/Uploads';
->>>>>>> 101808b87113018858094e3b6cf87d116f4d0b52
 
 const ProtectedRoute = ({ children }) => {
     const { authenticated } = useAuth();
