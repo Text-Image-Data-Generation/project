@@ -61,7 +61,7 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     {/* Protected route for home */}
-                    <Route path="/Augmentation" element={
+                    <Route path="/augmentation" element={
                         <ProtectedRoute>
                             <Augmentation/>
                         </ProtectedRoute>

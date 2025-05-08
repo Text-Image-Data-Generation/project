@@ -30,7 +30,7 @@ const Augmentation = () => {
         augmentations: selectedAugmentations,
       });
       alert('Augmentation applied successfully!');
-      navigate('/');
+      navigate('/Uploads');
     } catch (err) {
       console.error("Error applying augmentations:", err);
       alert("Failed to apply augmentations.");
