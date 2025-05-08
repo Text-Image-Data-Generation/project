@@ -59,8 +59,6 @@ const App = () => {
                         </ProtectedRoute>
                     } />
 
-                    
-
                     {/* Redirect unknown routes */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
