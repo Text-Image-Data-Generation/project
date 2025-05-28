@@ -10,6 +10,8 @@ import { ToastProvider } from './components/ToastContext';
 import Augmentation from './components/Augmentation';
 import CTGANUploader from './components/CTGANUploader';
 import Uploads from './components/Uploads';
+import EnhancedManager from './components/EnhancedManager';
+import ImageGenerationDashboard from './components/ImageGenerationDashboard';
 
 const ProtectedRoute = ({ children }) => {
     const { authenticated } = useAuth();
@@ -52,11 +54,11 @@ const App = () => {
                 {authenticated && <Navbar />}
                 <Routes>
                     {/* If authenticated and trying to access login/signup, redirect to home */}
-                    <Route path="/" element={authenticated ? <Navigate to="/project" /> : <Login />} />
-                    <Route path="/signup" element={authenticated ? <Navigate to="/project" /> : <SignUp />} />
+                    <Route path="/" element={authenticated ? <Navigate to="/home" /> : <Login />} />
+                    <Route path="/signup" element={authenticated ? <Navigate to="/home" /> : <SignUp />} />
 
                     {/* Protected route for home */}
-                    <Route path="/project" element={
+                    <Route path="/home" element={
                         <ProtectedRoute>
                             <Home />
                         </ProtectedRoute>
@@ -67,6 +69,18 @@ const App = () => {
                             <Augmentation/>
                         </ProtectedRoute>
                     } />
+                    <Route path="/image-resolution" element={
+                        <ProtectedRoute>
+                            <EnhancedManager />
+
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/lung-image-generation" element={
+                        <ProtectedRoute>
+                            <ImageGenerationDashboard />
+
+                        </ProtectedRoute>
+                    } />
                     {/* Protected route for home */}
                     <Route path="/Uploads" element={
                         <ProtectedRoute>
@@ -74,7 +88,7 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     {/* Protected route for home */}
-                    <Route path="/surya" element={
+                    <Route path="/csv-generation" element={
                         <ProtectedRoute>
                             <CTGANUploader/>
                         </ProtectedRoute>

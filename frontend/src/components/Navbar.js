@@ -30,51 +30,20 @@ const Navbar = () => {
     };
 
     return (
-        <nav
-            className="navbar navbar-expand-lg"
-            style={{
-                backgroundColor: '#FFDAB9', // Peach color
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                borderRadius: '0 0 12px 12px',
-                padding: '0.8rem 1.5rem',
-            }}
-        >
+        <nav className="navbar navbar-expand-lg bg-secondary text-light shadow-sm px-4 py-3">
             <div className="container-fluid d-flex justify-content-between align-items-center">
-                <a className="navbar-brand d-flex align-items-center" href="/">
-                    
-                    <span style={{
-                        fontSize: '1.8rem',
-                        fontWeight: '700',
-                        color: '#333',
-                    }}>
-                        Data Augmentation and Generation
-                    </span>
+                <a className="navbar-brand fw-bold fs-4 text-light" href="/">
+                    Data Augmentation & Generation
                 </a>
 
                 <div className="d-flex align-items-center">
-                    <span style={{
-                        marginRight: '24px',
-                        fontSize: '1rem',
-                        fontWeight: '600',
-                        color: '#3B3B98'
-                    }}>
-                        Welcome {username ? username.toUpperCase() : "USER"}
+                    <span className="me-4 text-light fw-semibold text-uppercase">
+                        Welcome {username || "User"}
                     </span>
 
                     <button
-                        className="btn"
+                        className="btn btn-outline-warning fw-semibold px-3"
                         onClick={handleLogout}
-                        style={{
-                            backgroundColor: '#FF6B6B',
-                            color: 'white',
-                            fontWeight: '600',
-                            padding: '8px 16px',
-                            borderRadius: '6px',
-                            border: 'none',
-                            transition: 'background-color 0.3s ease',
-                        }}
-                        onMouseEnter={(e) => e.target.style.backgroundColor = '#e55a5a'}
-                        onMouseLeave={(e) => e.target.style.backgroundColor = '#FF6B6B'}
                     >
                         Logout
                     </button>
