@@ -12,6 +12,8 @@ import CTGANUploader from './components/CTGANUploader';
 import Uploads from './components/Uploads';
 import EnhancedManager from './components/EnhancedManager';
 import ImageGenerationDashboard from './components/ImageGenerationDashboard';
+import PreviewDataset from './components/PreviewDataset';
+import PreviewEnhanced from './components/PreviewEnhanced ';
 
 const ProtectedRoute = ({ children }) => {
     const { authenticated } = useAuth();
@@ -66,7 +68,7 @@ const App = () => {
                     {/* Protected route for home */}
                     <Route path="/augmentation" element={
                         <ProtectedRoute>
-                            <Augmentation/>
+                            <Augmentation />
                         </ProtectedRoute>
                     } />
                     <Route path="/image-resolution" element={
@@ -75,6 +77,23 @@ const App = () => {
 
                         </ProtectedRoute>
                     } />
+                    <Route path="/preview/:encodedDatasetName/:contentType" element={
+                        <ProtectedRoute>
+                            <PreviewDataset />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/preview/:encodedDatasetName/:contentType/:runId" element={
+                        <ProtectedRoute>
+                            <PreviewDataset />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/preview_enhanced/:encodedDatasetName"
+                        element={
+                            <ProtectedRoute>
+                                <PreviewEnhanced />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route path="/lung-image-generation" element={
                         <ProtectedRoute>
                             <ImageGenerationDashboard />
@@ -84,13 +103,13 @@ const App = () => {
                     {/* Protected route for home */}
                     <Route path="/Uploads" element={
                         <ProtectedRoute>
-                            <Uploads/>
+                            <Uploads />
                         </ProtectedRoute>
                     } />
                     {/* Protected route for home */}
                     <Route path="/csv-generation" element={
                         <ProtectedRoute>
-                            <CTGANUploader/>
+                            <CTGANUploader />
                         </ProtectedRoute>
                     } />
 

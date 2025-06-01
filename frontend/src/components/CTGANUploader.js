@@ -1,19 +1,42 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import DataTable from 'react-data-table-component';
 
-function CTGANUploader() {
+const CtganUploader = () => {
     const [file, setFile] = useState(null);
+    const [epochs, setEpochs] = useState(5);
     const [samples, setSamples] = useState(100);
-    const [loading, setLoading] = useState(false);
     const [history, setHistory] = useState([]);
-    const flaskUrl = process.env.REACT_APP_FlaskUrl;
+    const [previewData, setPreviewData] = useState(null);
+    const [previewColumns, setPreviewColumns] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
+    const [showToast, setShowToast] = useState(false);
+    const [previewTitle, setPreviewTitle] = useState('');
+
+    const BASE = process.env.REACT_APP_FlaskUrl;
+    const modalRef = useRef(null);
+
+    const formatTimestamp = (ts) => {
+        const year = ts.slice(0, 4);
+        const month = ts.slice(4, 6);
+        const day = ts.slice(6, 8);
+        const hour = ts.slice(8, 10);
+        const minute = ts.slice(10, 12);
+        const second = ts.slice(12, 14);
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    };
 
     const fetchHistory = async () => {
         try {
-            const res = await axios.get(`${flaskUrl}/get-csv-history`);
-            setHistory(res.data.reverse());
+            const res = await axios.get(`${BASE}/get-csv-history`);
+            const formatted = res.data.reverse().map(entry => ({
+                ...entry,
+                timestampFormatted: formatTimestamp(entry.timestamp)
+            }));
+            setHistory(formatted);
         } catch (err) {
-            console.error("Failed to fetch history", err);
+            showToastMessage("Error fetching history: " + err.message);
         }
     };
 
@@ -21,247 +44,272 @@ function CTGANUploader() {
         fetchHistory();
     }, []);
 
-    const handleUpload = async () => {
-        if (!file || !flaskUrl) {
-            alert("Please provide a CSV file and ensure Flask URL is set.");
+    const showToastMessage = (msg) => {
+        setToastMessage(msg);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 4000);
+    };
+
+    const handleFileChange = (e) => {
+        setFile(e.target.files[0]);
+    };
+
+    const handleEpochsChange = (e) => {
+        setEpochs(parseInt(e.target.value, 10) || 1);
+    };
+
+    const handleSamplesChange = (e) => {
+        setSamples(parseInt(e.target.value, 10) || 1);
+    };
+
+    const handleGenerate = async () => {
+        if (!file) {
+            showToastMessage("Please select a CSV file to generate synthetic data.");
             return;
         }
 
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append("epochs", "5");
-        formData.append("samples", samples);
+        formData.append('file', file);
+        formData.append('epochs', epochs);
+        formData.append('samples', samples);
 
         setLoading(true);
-
         try {
-            const response = await axios.post(
-                `${flaskUrl}/generate-synthetic`,
-                formData
+            await axios.post(`${BASE}/generate-synthetic`, formData);
+            await fetchHistory();
+            showToastMessage("Synthetic CSV generated successfully!");
+            setFile(null);
+            setEpochs(5);
+            setSamples(100);
+
+            const modalEl = modalRef.current;
+            if (modalEl) {
+                const modalInstance = window.bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        } catch (err) {
+            showToastMessage("Failed to generate synthetic data: " + (err.response?.data?.error || err.message));
+        }
+        setLoading(false);
+    };
+
+    const handlePreview = async (type, filename) => {
+        try {
+            const res = await axios.get(`${BASE}/preview-csv/${type}/${filename}`);
+            const { columns, data } = res.data;
+            setPreviewColumns(
+                columns.map(col => ({
+                    name: col,
+                    selector: row => row[col],
+                    sortable: true
+                }))
             );
-
-            const { output_file } = response.data;
-
-            const downloadResponse = await axios.get(
-                `${flaskUrl}/download-csv/${encodeURIComponent(output_file)}`,
-                { responseType: "blob" }
-            );
-
-            const blob = new Blob([downloadResponse.data], { type: "text/csv" });
-            const downloadUrl = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = downloadUrl;
-            link.download = output_file;
-            link.click();
-
-            fetchHistory(); // Refresh history
-        } catch (error) {
-            console.error("Upload or download failed:", error);
-            alert("Failed to generate or download synthetic data.");
-        } finally {
-            setLoading(false);
+            const uniqueData = data.map((row, index) => ({ id: index + 1, ...row }));
+            setPreviewData(uniqueData);
+            setPreviewTitle(type === 'uploaded' ? 'Original Data Preview' : 'Generated Data Preview');
+        } catch (err) {
+            showToastMessage("Failed to preview CSV: " + err.message);
         }
     };
-    function formatTimestamp(ts) {
-        // Expecting ts like "20250528115152"
-        if (!ts || ts.length !== 14) return ts; // fallback
 
-        const year = ts.slice(0, 4);
-        const month = ts.slice(4, 6);
-        const day = ts.slice(6, 8);
-        const hour = ts.slice(8, 10);
-        const minute = ts.slice(10, 12);
-        const second = ts.slice(12, 14);
-
-        // Create a Date object (note: months are 0-indexed in JS Date)
-        const date = new Date(
-            year,
-            parseInt(month, 10) - 1,
-            day,
-            hour,
-            minute,
-            second
-        );
-
-        // Format date using toLocaleString (customize as needed)
-        return date.toLocaleString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-        });
-    }
-
+    const handleDownload = (type, filename) => {
+        window.open(`${BASE}/download-csv/${type}/${filename}`, '_blank');
+    };
 
     return (
-        <div
-            style={{
-                padding: "2rem",
-                maxWidth: "900px",
-                margin: "auto",
-                fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-                lineHeight: 1.5,
-            }}
-        >
-            <h2 style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-                Upload CSV to Generate Synthetic Data
-            </h2>
+        <div className="container mt-4" style={{ fontFamily: 'sans-serif' }}>
 
+            {/* Toast */}
             <div
-                style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: "1rem",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: "1.5rem",
-                }}
+                className={`toast align-items-center text-white bg-primary border-0 position-fixed bottom-0 end-0 m-3 ${showToast ? 'show' : 'hide'}`}
+                role="alert" aria-live="assertive" aria-atomic="true"
+                style={{ minWidth: '280px', zIndex: 1055 }}
             >
-                <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => setFile(e.target.files[0])}
-                    style={{
-                        flex: "1 1 250px",
-                        maxWidth: "300px",
-                        padding: "0.5rem",
-                        fontSize: "1rem",
-                        borderRadius: "4px",
-                        border: "1px solid #ccc",
-                    }}
-                />
-
-                <label
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                        fontSize: "1rem",
-                    }}
-                >
-                    Number of Samples:
-                    <input
-                        type="number"
-                        value={samples}
-                        onChange={(e) => setSamples(e.target.value)}
-                        min="1"
-                        style={{
-                            width: "100px",
-                            padding: "0.3rem 0.5rem",
-                            fontSize: "1rem",
-                            borderRadius: "4px",
-                            border: "1px solid #ccc",
-                        }}
-                    />
-                </label>
-
-                <button
-                    onClick={handleUpload}
-                    disabled={loading}
-                    style={{
-                        flexShrink: 0,
-                        padding: "0.6rem 1.2rem",
-                        fontSize: "1rem",
-                        backgroundColor: loading ? "#888" : "#007BFF",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: loading ? "not-allowed" : "pointer",
-                        transition: "background-color 0.3s ease",
-                    }}
-                >
-                    {loading ? "Processing..." : "Generate Synthetic Data"}
-                </button>
+                <div className="d-flex">
+                    <div className="toast-body">{toastMessage}</div>
+                    <button type="button" className="btn-close btn-close-white me-2 m-auto"
+                        onClick={() => setShowToast(false)}></button>
+                </div>
             </div>
 
-            <h3 style={{ marginBottom: "1rem", textAlign: "center" }}>History</h3>
+            <div className="card shadow-sm mb-4">
+                <div className="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 className="fw-bold text-primary mb-0">
+                            CTGAN CSV Generator
+                        </h3>
+                        <p className="text-muted mt-1 mb-0">Generate synthetic tabular data using CTGAN.</p>
+                    </div>
+                    <button
+                        type="button"
+                        className="btn btn-success btn-lg"
+                        data-bs-toggle="modal"
+                        data-bs-target="#uploadModal"
+                    >
+                        Generate Synthetic CSV
+                    </button>
+                </div>
+            </div>
 
-            <div style={{ overflowX: "auto" }}>
-                <table
-                    style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        fontSize: "0.9rem",
-                        minWidth: "700px",
-                    }}
-                >
-                    <thead>
-                        <tr
-                            style={{
-                                backgroundColor: "#007BFF",
-                                color: "white",
-                                textAlign: "left",
-                            }}
-                        >
-                            <th style={{ padding: "8px" }}>Original File</th>
-                            <th style={{ padding: "8px" }}>Generated File</th>
-                            <th style={{ padding: "8px" }}>Epochs</th>
-                            <th style={{ padding: "8px" }}>Samples</th>
-                            <th style={{ padding: "8px" }}>Timestamp</th>
-                            <th style={{ padding: "8px" }}>Download</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {history.length === 0 ? (
-                            <tr>
-                                <td colSpan="6" style={{ padding: "12px", textAlign: "center" }}>
-                                    No history found.
-                                </td>
-                            </tr>
-                        ) : (
-                            history.map((item, index) => (
-                                <tr
-                                    key={index}
-                                    style={{
-                                        borderBottom: "1px solid #ddd",
-                                        backgroundColor: index % 2 === 0 ? "#f9f9f9" : "white",
-                                    }}
-                                >
-                                    <td style={{ padding: "8px", wordBreak: "break-word" }}>
-                                        {item.original_file}
-                                    </td>
-                                    <td style={{ padding: "8px", wordBreak: "break-word" }}>
-                                        {item.filename}
-                                    </td>
-                                    <td style={{ padding: "8px", textAlign: "center" }}>
-                                        {item.epochs}
-                                    </td>
-                                    <td style={{ padding: "8px", textAlign: "center" }}>
-                                        {item.samples}
-                                    </td>
-                                    {/* <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
-                                        {item.timestamp}
-                                    </td> */}
-                                    <td style={{ padding: "8px", whiteSpace: "nowrap" }}>
-                                        {formatTimestamp(item.timestamp)}
-                                    </td>
+            {/* Modal */}
+            <div className="modal fade" id="uploadModal" tabIndex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true" ref={modalRef}>
+                <div className="modal-dialog">
+                    <div className="modal-content">
+                        <div className="modal-header bg-light">
+                            <h5 className="modal-title text-primary" id="uploadModalLabel">
+                                Generate Synthetic CSV
+                            </h5>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" disabled={loading}></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="mb-3">
+                                <label htmlFor="csvFile" className="form-label">Select CSV File:</label>
+                                <input
+                                    type="file"
+                                    className="form-control"
+                                    id="csvFile"
+                                    accept=".csv"
+                                    onChange={handleFileChange}
+                                    disabled={loading}
+                                />
+                            </div>
+                            <div className="row mb-3">
+                                <div className="col-md-6">
+                                    <label htmlFor="epochs" className="form-label">Epochs:</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        id="epochs"
+                                        value={epochs}
+                                        onChange={handleEpochsChange}
+                                        disabled={loading}
+                                        min={1}
+                                    />
+                                    <small className="form-text text-muted">Number of training iterations.</small>
+                                </div>
+                                <div className="col-md-6">
+                                    <label htmlFor="samples" className="form-label">Samples:</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        id="samples"
+                                        value={samples}
+                                        onChange={handleSamplesChange}
+                                        disabled={loading}
+                                        min={1}
+                                    />
+                                    <small className="form-text text-muted">Number of synthetic rows to generate.</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="modal-footer bg-light">
+                            <button className="btn btn-secondary" data-bs-dismiss="modal" disabled={loading}>Cancel</button>
+                            <button className="btn btn-primary" onClick={handleGenerate} disabled={loading}>
+                                {loading && <span className="spinner-border spinner-border-sm me-2" />}
+                                Generate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                    <td style={{ padding: "8px", textAlign: "center" }}>
-                                        <a
-                                            href={`${flaskUrl}/download-csv/${encodeURIComponent(
-                                                item.filename
-                                            )}`}
-                                            download
-                                            style={{
-                                                color: "#007BFF",
-                                                textDecoration: "none",
-                                                fontWeight: "600",
-                                            }}
-                                        >
-                                            Download
-                                        </a>
-                                    </td>
+            {/* CSV History */}
+            <div className="mt-4">
+                <h5 className="fw-semibold text-info mb-3">
+                    Generation History
+                </h5>
+                {history.length === 0 ? (
+                    <div className="alert alert-info">
+                        No CSV generation history available.
+                    </div>
+                ) : (
+                    <div className="table-responsive">
+                        <table className="table table-bordered table-striped align-middle">
+                            <thead className="table-light">
+                                <tr>
+                                    <th>Original File</th>
+                                    <th>Generated File</th>
+                                    <th>Shape</th>
+                                    <th>Timestamp</th>
+                                    <th>Actions</th>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            </thead>
+                            <tbody>
+                                {history.map((entry, i) => (
+                                    <tr key={i}>
+                                        <td>{entry.original_file}</td>
+                                        <td>{entry.generated_file}</td>
+                                        <td>
+                                            <span className="badge bg-secondary me-1" title="Original Shape">
+                                                Original: {entry.input_shape.rows}×{entry.input_shape.cols}
+                                            </span>
+                                            <span className="badge bg-success" title="Generated Shape">
+                                                Generated: {entry.output_shape.rows}×{entry.output_shape.cols}
+                                            </span>
+                                        </td>
+                                        <td>{entry.timestampFormatted}</td>
+                                        <td>
+                                            <div className="d-flex gap-2">
+                                                <button
+                                                    className="btn btn-sm btn-outline-success"
+                                                    onClick={() => handleDownload('uploaded', entry.original_file)}
+                                                    title="Download Original CSV"
+                                                >
+                                                    Download Original
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-outline-info"
+                                                    onClick={() => handlePreview('uploaded', entry.original_file)}
+                                                    title="Preview Original CSV"
+                                                >
+                                                    Preview Original
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    onClick={() => handleDownload('generated', entry.generated_file)}
+                                                    title="Download Generated CSV"
+                                                >
+                                                    Download Generated
+                                                </button>
+                                                <button
+                                                    className="btn btn-sm btn-outline-warning"
+                                                    onClick={() => handlePreview('generated', entry.generated_file)}
+                                                    title="Preview Generated CSV"
+                                                >
+                                                    Preview Generated
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
+
+            {/* Preview Data Table */}
+            {previewData && (
+                <div className="card shadow-sm p-3 mt-4">
+                    <h5 className="fw-semibold text-primary mb-3">
+                        {previewTitle}
+                    </h5>
+                    <DataTable
+                        columns={previewColumns}
+                        data={previewData}
+                        pagination
+                        dense
+                        highlightOnHover
+                        striped
+                        persistTableHead
+                        responsive
+                    />
+                </div>
+            )}
         </div>
     );
-}
+};
 
-export default CTGANUploader;
+export default CtganUploader;

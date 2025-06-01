@@ -8,20 +8,20 @@ const EnhancedManager = () => {
     const [datasetName, setDatasetName] = useState('');
     const [uploading, setUploading] = useState(false);
 
+    useEffect(() => {
+        fetchDatasets();
+    }, []);
+
     const fetchDatasets = async () => {
         try {
-            const res = await axios.get(`${process.env.REACT_APP_FlaskUrl}enhanced_datasets`);
+            const res = await axios.get(`${process.env.REACT_APP_FlaskUrl}/enhanced_datasets`);
             setDatasets(res.data);
         } catch (e) {
-            console.error("Failed to fetch enhanced datasets", e);
+            console.error("Failed to fetch datasets", e);
         } finally {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchDatasets();
-    }, []);
 
     const handleFileChange = (e) => {
         setSelectedFiles(e.target.files);
@@ -41,148 +41,165 @@ const EnhancedManager = () => {
 
         setUploading(true);
         try {
-            const res = await axios.post(`${process.env.REACT_APP_FlaskUrl}upload_and_enhance`, formData);
+            const res = await axios.post(`${process.env.REACT_APP_FlaskUrl}/upload_and_enhance`, formData);
             alert(`Enhancement complete: ${res.data.enhanced_count} images processed`);
             setSelectedFiles([]);
             setDatasetName('');
             fetchDatasets();
+            // Bootstrap will handle closing the modal due to the data-bs-dismiss attribute
         } catch (error) {
-            console.error("Upload/Enhance failed", error);
+            console.error("Upload failed", error);
             alert("Upload failed: " + (error.response?.data?.error || error.message));
         } finally {
             setUploading(false);
         }
     };
 
-    const downloadZip = (dataset) => {
-        window.open(`${process.env.REACT_APP_FlaskUrl}enhanced_zip/${dataset}`);
+    const handleDelete = async (dataset) => {
+        if (!window.confirm(`Are you sure you want to delete dataset "${dataset}"?`)) return;
+
+        try {
+            await axios.delete(`${process.env.REACT_APP_FlaskUrl}/delete_enhanced_dataset/${dataset}`);
+            alert(`Dataset "${dataset}" deleted successfully.`);
+            fetchDatasets();
+        } catch (err) {
+            console.error("Delete failed", err);
+            alert("Failed to delete dataset.");
+        }
+    };
+
+    const downloadZip = (dataset, type) => {
+        window.open(`${process.env.REACT_APP_FlaskUrl}/download_enhanced/${type}/${dataset}`, '_blank');
+    };
+
+    const handlePreviewRun = (datasetName) => {
+        const encoded = btoa(datasetName);
+        window.open(`/preview_enhanced/${encoded}`, '_blank');
     };
 
     return (
-        <div style={{ maxWidth: 900, margin: '2rem auto', padding: '1rem 2rem', fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
-            <h2 style={{ textAlign: 'center', marginBottom: '1.5rem' }}>Upload and Enhance with ESRGAN</h2>
+        <div className="container py-4">
+            <h2 className="text-center mb-4">ESRGAN Image Enhancement</h2>
 
-            <div
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '1rem',
-                    marginBottom: '2rem',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                }}
-            >
-                <input
-                    type="text"
-                    placeholder="Enter Dataset Name"
-                    value={datasetName}
-                    onChange={(e) => setDatasetName(e.target.value)}
-                    style={{
-                        padding: '10px',
-                        fontSize: '1rem',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        flex: '1 1 250px',
-                        minWidth: '200px',
-                    }}
-                />
-                <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    style={{
-                        flex: '1 1 250px',
-                        minWidth: '200px',
-                        padding: '6px 10px',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        cursor: 'pointer',
-                    }}
-                />
+            <div className="text-center mb-4">
                 <button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    style={{
-                        padding: '10px 20px',
-                        fontSize: '1rem',
-                        borderRadius: 6,
-                        border: 'none',
-                        backgroundColor: uploading ? '#999' : '#007bff',
-                        color: '#fff',
-                        cursor: uploading ? 'not-allowed' : 'pointer',
-                        minWidth: '160px',
-                        flexShrink: 0,
-                        boxShadow: '0 2px 6px rgba(0,123,255,0.4)',
-                        transition: 'background-color 0.3s',
-                    }}
-                    onMouseEnter={e => !uploading && (e.target.style.backgroundColor = '#0056b3')}
-                    onMouseLeave={e => !uploading && (e.target.style.backgroundColor = '#007bff')}
+                    className="btn btn-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#uploadModal"
                 >
-                    {uploading ? 'Uploading & Enhancing...' : 'Upload & Enhance'}
+                    Upload & Enhance Images
                 </button>
             </div>
 
-            <h3 style={{ marginBottom: '1rem', textAlign: 'center' }}>Enhanced Datasets</h3>
-
+            <h4 className="text-center">Enhanced Datasets</h4>
             {loading ? (
-                <p style={{ textAlign: 'center' }}>Loading datasets...</p>
+                <div className="text-center">Loading datasets...</div>
+            ) : datasets.length === 0 ? (
+                <div className="text-center text-muted">No datasets found.</div>
             ) : (
-                <div style={{ overflowX: 'auto' }}>
-                    <table
-                        style={{
-                            width: '100%',
-                            borderCollapse: 'collapse',
-                            fontSize: '1rem',
-                            minWidth: '600px',
-                        }}
-                    >
-                        <thead style={{ backgroundColor: '#007bff', color: '#fff' }}>
+                <div className="table-responsive">
+
+                    <table className="table table-bordered align-middle table-striped table-hover text-center">
+                        <thead className="table-primary">
                             <tr>
-                                <th style={{ padding: '12px', textAlign: 'left' }}>Dataset</th>
-                                <th style={{ padding: '12px', textAlign: 'center' }}>Original Count</th>
-                                <th style={{ padding: '12px', textAlign: 'center' }}>Enhanced Count</th>
-                                <th style={{ padding: '12px', textAlign: 'center' }}>Download</th>
+                                <th>Dataset</th>
+                                <th>Total Images</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {datasets.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" style={{ textAlign: 'center', padding: '16px' }}>
-                                        No enhanced datasets yet.
+                            {datasets.map((ds) => (
+                                <tr key={ds.dataset}>
+                                    <td>{ds.dataset}</td>
+                                    <td>{ds.original_count}</td>
+                                    <td>
+                                        <div className="d-flex justify-content-center gap-2 flex-wrap">
+                                            <button
+                                                className="btn btn-success btn-sm"
+                                                onClick={() => downloadZip(ds.dataset, 'enhanced')}
+                                            >
+                                                Download Enhanced
+                                            </button>
+                                            <button
+                                                className="btn btn-outline-secondary btn-sm"
+                                                onClick={() => downloadZip(ds.dataset, 'original')}
+                                            >
+                                                Download Original
+                                            </button>
+                                            <button
+                                                className="btn btn-outline-info btn-sm"
+                                                onClick={() => handlePreviewRun(ds.dataset)}
+                                            >
+                                                Preview
+                                            </button>
+                                            <button
+                                                className="btn btn-outline-danger btn-sm"
+                                                onClick={() => handleDelete(ds.dataset)}
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
-                            ) : (
-                                datasets.map((ds) => (
-                                    <tr key={ds.dataset} style={{ borderBottom: '1px solid #ddd' }}>
-                                        <td style={{ padding: '12px' }}>{ds.dataset}</td>
-                                        <td style={{ padding: '12px', textAlign: 'center' }}>{ds.original_count}</td>
-                                        <td style={{ padding: '12px', textAlign: 'center' }}>{ds.enhanced_count}</td>
-                                        <td style={{ padding: '12px', textAlign: 'center' }}>
-                                            <button
-                                                onClick={() => downloadZip(ds.dataset)}
-                                                style={{
-                                                    padding: '6px 12px',
-                                                    backgroundColor: '#28a745',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '4px',
-                                                    cursor: 'pointer',
-                                                    transition: 'background-color 0.3s',
-                                                }}
-                                                onMouseEnter={(e) => (e.target.style.backgroundColor = '#1e7e34')}
-                                                onMouseLeave={(e) => (e.target.style.backgroundColor = '#28a745')}
-                                            >
-                                                Download ZIP
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
+                            ))}
                         </tbody>
                     </table>
                 </div>
             )}
+
+            {/* Upload Modal */}
+            <div
+                className="modal fade"
+                id="uploadModal"
+                tabIndex="-1"
+                aria-labelledby="uploadModalLabel"
+                aria-hidden="true"
+            >
+                <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h5 className="modal-title" id="uploadModalLabel">Upload & Enhance</h5>
+                            <button
+                                type="button"
+                                className="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"
+                            ></button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="mb-3">
+                                <label className="form-label">Dataset Name</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={datasetName}
+                                    onChange={(e) => setDatasetName(e.target.value)}
+                                    placeholder="Enter Dataset Name"
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Select Images</label>
+                                <input
+                                    type="file"
+                                    className="form-control"
+                                    multiple
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleUpload}
+                                disabled={uploading}
+                            >
+                                {uploading ? 'Uploading...' : 'Upload & Enhance'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
