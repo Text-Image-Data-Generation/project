@@ -493,7 +493,7 @@ const Uploads = () => {
                                                                     <div>
                                                                         <strong>{run.run_id}</strong>
                                                                         <div className="text-muted">
-                                                                            ({new Date(run.timestamp).toLocaleString()})
+                                                                            {run.timestamp}
                                                                         </div>
                                                                     </div>
                                                                     <div className="text-truncate my-1" title={run.augmented_zip}>
